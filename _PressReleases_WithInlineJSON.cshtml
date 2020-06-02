@@ -1,0 +1,220 @@
+<link type="text/css" rel="stylesheet" href="@App.Path/assets/fancybox/jquery.fancybox.css?v=2.1.5" />
+<link type="text/css" rel="stylesheet" href="@App.Path/assets/press-releases.css" />
+
+<script type="text/javascript" src="@App.Path/assets/fancybox/jquery.fancybox.pack.js?v=2.1.5" data-enableoptimizations="100"></script>
+<script type="text/javascript" src="@App.Path/assets/moment/moment-with-langs.min.js" data-enableoptimizations="101"></script>
+<script type="text/javascript" src="@App.Path/assets/angular/angular.min.js" data-enableoptimizations="102"></script>
+<script type="text/javascript" src="@App.Path/assets/press-releases.js" data-enableoptimizations="103"></script>
+
+
+
+@functions{
+
+    // 2dm: probably not necessary any more, all relationships today are real arrays, so they should all have count
+    bool HasItems(dynamic array)
+    {
+        return array.GetType() != typeof(string) && array.Count > 0;
+    }
+
+    // 2dm: i think this would not be necessary if it would use 2sxc serializer...
+    string[] GetCategories(dynamic item)
+    {
+        if (!HasItems(item.Content.Category))
+        {
+            return new string[0];
+        }
+        var categories = new string[item.Content.Category.Count];
+        for (int i = 0; i < categories.Length; i++)
+        {
+            categories[i] = item.Content.Category[i].Title;
+        }
+        return categories;
+    }
+
+    // 2dm: i think this would not be necessary if it would use 2sxc serializer...
+    string[] GetLanguages(dynamic item)
+    {
+        if (!HasItems(item.Content.Language))
+        {
+            return new string[0];
+        }
+        var languages = new string[item.Content.Language.Count];
+        for (int i = 0; i < languages.Length; i++)
+        {
+            languages[i] = item.Content.Language[i].Name;
+        }
+        return languages;
+    }
+
+    // 2dm: if we use the 2sxc serializer, we would have to make sure we deliver all LOMs and let the JS map it...
+    dynamic GetLom(dynamic item)
+    {
+        if (!HasItems(item.Content.LOM))
+        {
+            return null;
+        }
+        return new { 
+            Title = item.Content.LOM[0].Title, 
+            Website = item.Content.LOM[0].Website,
+            PriorizedSort = item.Content.LOM[0].PriorizedSort is bool && item.Content.LOM[0].PriorizedSort
+        };
+    }
+
+    // 2dm: again: would have to add all publishers to the 2sxc serializer
+    dynamic GetPublisher(dynamic item)
+    {
+        if (!HasItems(item.Content.Publisher))
+        {
+            return null;
+        }
+        return new { Title = item.Content.Publisher[0].Title, Link = item.Content.Publisher[0].Link };
+    }
+
+    // 2dm: this would have to happen in angular, it's a mix of logic in C# and JS...
+    string GetThumbnail(dynamic item)
+    {
+        return string.IsNullOrEmpty(item.Content.Thumbnail) ? App.Path + "/assets/pictures/thumbnail-default.png" : item.Content.Thumbnail;
+    }
+}
+
+
+
+@{  
+    var moduleId = Dnn.Module.ModuleID;
+    
+    var articles = List.Select(item => new
+    {
+        ID = item.EntityId,
+        Toolbar = item.Content.Toolbar.ToString(),
+        Title   = item.Content.Title,
+        File    = item.Content.File,
+        Thumbnail = GetThumbnail(item),
+        Teaser  = item.Content.Teaser,
+        Content = item.Content.Content,
+        Date = item.Content.Date,
+        Year = item.Content.Date.Year,
+        LOM  = GetLom(item),
+        Categories  = GetCategories(item),
+        Languages   = GetLanguages(item),
+        Publisher   = GetPublisher(item),
+        LiveArticle = item.Content.LiveArticle
+    });
+}
+
+
+
+<div class="jci-pr sc-element" ng-controller="PressReleasesController" ng-init="init(@Json.Encode(articles))">
+    @ListContent.Toolbar
+    <h2>@ListContent.Title</h2>
+
+    <!-- FILTER -->
+    <div class="jci-pr-filter">
+        <div class="ym-column">
+            <div class="ym-col1">
+                <div class="ym-cbox">
+                    <select ng-model="FilterLom" ng-options="f.Name for f in FilterLoms | orderBy:['PriorizedSort', 'Name']">
+                        <option value="">@App.Resources.LabelLomsAll</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="ym-col2">
+                <div class="ym-cbox">
+                    <select ng-model="FilterCategory" ng-options="f.Name for f in FilterCategories | orderBy:'Name'">
+                        <option value="">@App.Resources.LabelCategoriesAll</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="ym-col3">
+                <div class="ym-cbox">
+                    <select ng-model="FilterYear" ng-options="f.Name for f in FilterYears | orderBy:'Name':true">
+                        <option value="">@App.Resources.LabelYearsAll</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- END FILTER -->
+
+    <!-- ARTICLES -->
+    <!-- 2tk: Insert ng-cloak here -->
+    <ul class="jci-pr-articles">
+        <li class="sc-element" ng-repeat="article in Articles | filter: { Categories: FilterCategory.Value, LOM: FilterLom.Value, Year: FilterYear.Value } | orderBy: 'Date': true">
+            <div ng-bind-html="article.Toolbar"></div>
+
+            <!-- ARTICLE CONTENT -->
+            <div class="ym-column jci-pr-article" ng-click="showArticlePreview(article.ID)">
+                <div class="ym-col1">
+                    <div class="ym-cbox">
+                        <div class="jci-pr-article-title">{{article.Title}}</div>
+                        <div class="jci-pr-article-teaser">{{article.Teaser}}</div>
+                        <ul class="jci-pr-article-links">
+                            <li>
+                                <a ng-click="openLink(article.File, $event)">@App.Resources.LabelDownload</a>
+                            </li>
+                            <li ng-if="article.LiveArticle">
+                                <a ng-click="openLink(article.LiveArticle, $event)">@App.Resources.LabelLiveArticle</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div id="{{article.ID}}" class="jci-pr-article-preview" style="display:none">
+                        <img ng-src="{{article.Thumbnail}}?w=2048&h=2048&mode=crop&quality=50" alt="" />
+                        <div class="jci-pr-article-title">{{article.Title}}</div>
+                        <div class="jci-pr-article-content" ng-bind-html="article.Content"></div>
+                    </div>
+                </div>
+                <!-- END ARTICLE CONTENT -->
+                <!-- ARTICLE ASIDE -->
+                <div class="ym-col2">
+                    <div class="ym-cbox">
+                        <ul class="jci-pr-article-asides">
+                            <li>
+                                <div>
+                                    <a ng-click="openLink(article.LOM.Website, $event)">{{article.LOM.Title}}</a>
+                                </div>
+                            </li>
+                            <li>
+                                <div>{{article.Date | formatDate: 'DD.MM.YYYY'}}</div>
+                            </li>
+                            <li ng-if="article.Publisher">
+                                <div>
+                                    <a ng-click="openLink(article.Publisher.Link, $event)">{{article.Publisher.Title}}</a>
+                                </div>
+                            </li>
+                            <li ng-if="article.Categories">
+                                <div>{{article.Categories | formatArray: ', '}}</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- END ARTICLE ASIDE -->
+                <!-- ARTICLE THUMBNAIL -->
+                <div class="ym-col3">
+                    <div class="ym-cbox">
+                        <img ng-src="{{article.Thumbnail}}?w=512&h=512&mode=crop&quality=50" alt="" />
+                    </div>
+                </div>
+                <!-- END ARTICLE THUMBNAIL -->
+
+            </div>
+        </li>
+    </ul>
+    <!-- END ARTICLES -->
+
+</div>
+
+
+<script>
+    // Make sure we have only one angular application per page!
+    if (!$("body").attr("ng-app")) {
+        $("body").attr("ng-app", "toSxcApp");
+    }
+
+    $(function () {
+        // Setup 2sxc toolbars
+        // 2tk: We can do this now with actions
+        $2sxc.beta.initToolbars();
+    })
+</script>

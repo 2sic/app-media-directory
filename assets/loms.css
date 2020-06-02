@@ -1,0 +1,58 @@
+﻿.co-lom-list {
+    width: 100%;
+}
+
+    .co-lom-list td {
+        background: #FFF;
+        padding: 7px;
+        cursor: pointer;
+    }
+
+    .co-lom-list th, .co-lom-list td {
+        border-bottom: 5px solid #FFF;
+    }
+
+    .co-lom-list th {
+        text-align: left;
+        padding-bottom: 10px;
+    }
+
+    .co-lom-list .even td {
+        background: none repeat scroll 0 0 #ECEDED;
+    }
+
+    .co-lom-list tr:hover td {
+        background: #D4D5D7;
+    }
+
+    .co-lom-list span {
+        background: none repeat scroll 0 0 #0096D6;
+        color: #FFFFFF;
+        display: inline-block;
+        padding: 0px 6px;
+        text-transform: uppercase;
+        margin-left: 7px;
+        font-size: 26px;
+        line-height: 36px;
+        font-weight: 500;
+    }
+
+.co-lom-list-infowindow {
+    width: 180px;
+}
+
+    .co-lom-list-infowindow, .co-lom-list-infowindow p {
+        line-height: 1.5em;
+    }
+
+#LomMapCanvas {
+    margin-bottom: 40px;
+    margin-left: -30px;
+    margin-top: -110px;
+    width: 980px;
+    height: 428px;
+}
+
+.co-lom-list .sc-add {
+    display: none;
+}

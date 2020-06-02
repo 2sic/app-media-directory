@@ -1,0 +1,26 @@
+﻿.jci-publishers h2 {
+    background: #0097d7;
+    display: inline-block;
+    margin: 0 0 10px 0;
+    padding: 4px;
+    line-height: 1;
+}
+
+.jci-publishers ol {
+    margin: 0;
+    padding: 0;
+    list-style-position: inside;
+}
+
+    .jci-publishers ol > li {
+        margin: 0;
+        padding: 10px 0 0 0;
+    }
+
+        .jci-publishers ol > li small {
+            margin-left: 40px;
+        }
+
+.jci-publishers .sc-add {
+    display: none !important;
+}

@@ -1,0 +1,17 @@
+@inherits ToSic.Sxc.Dnn.RazorComponent
+
+<link rel="stylesheet" href="@App.Path/assets/publishers.css" />
+<div class="jci-publishers>
+    @Html.Raw(ListContent.Toolbar)
+    <h2>@ListContent.Title</h2>
+    <ol>
+        @foreach (var item in List.OrderBy(i => i.Content.Title))
+        {
+            <li class="sc-element">
+                @Html.Raw(item.Content.Toolbar)
+                <span>@item.Content.Title</span><br />
+                <small>@item.Content.Link</small>
+            </li>
+        }
+    </ol>
+</div>

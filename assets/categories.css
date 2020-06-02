@@ -1,0 +1,22 @@
+﻿.jci-categories h2 {
+    background: #0097d7;
+    display: inline-block;
+    margin: 0 0 10px 0;
+    padding: 4px;
+    line-height: 1;
+}
+
+.jci-categories ol {
+    margin: 0;
+    padding: 0;
+    list-style-position: inside;
+}
+
+    .jci-categories ol > li {
+        margin: 0;
+        padding: 10px 0 0 0;
+    }
+
+.jci-categories .sc-add {
+    display: none !important;
+}

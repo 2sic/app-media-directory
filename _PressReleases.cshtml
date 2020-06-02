@@ -1,0 +1,129 @@
+<link type="text/css" rel="stylesheet" href="@App.Path/assets/fancybox/jquery.fancybox.css?" />
+<link type="text/css" rel="stylesheet" href="@App.Path/assets/press-releases.css" />
+
+<script src="/DesktopModules/ToSIC_SexyContent/Js/2sxc.api.js" data-enableoptimizations="100"></script>
+<script src="/DesktopModules/ToSIC_SexyContent/Js/AngularJS/angular.min.js" data-enableoptimizations="101"></script>
+<script src="@App.Path/assets/moment/moment-with-langs.min.js" data-enableoptimizations="102"></script>
+<script src="@App.Path/assets/fancybox/jquery.fancybox.pack.js" data-enableoptimizations="103"></script>
+
+<script src="@App.Path/assets/press-releases-helpers.js" data-enableoptimizations="105"></script>
+<script src="@App.Path/assets/press-releases-filters.js" data-enableoptimizations="106"></script>
+<script src="@App.Path/assets/press-releases-controller.js" data-enableoptimizations="107"></script>
+
+
+@functions{
+    public override void CustomizeData()
+    {
+        Data.Attach("Publishers", App.Data["Publisher"]);
+        Data.Attach("Categories", App.Data["Category"]);
+        Data.Attach("Loms", App.Data["LOM"]); 
+        Data.Publish.Enabled = true;
+        Data.Publish.Streams = "Default,Publishers,Categories,Loms";
+    }
+}
+
+
+<div id="jci-pr-@Dnn.Module.ModuleID" class="jci-pr" ng-controller="PressReleasesController" ng-init="init(@Dnn.Module.ModuleID)">
+    <h2 class="sc-element">@ListContent.Title @ListContent.Toolbar</h2>
+
+    <!-- FILTER -->
+    <div class="jci-pr-filter">
+        <div class="ym-column">
+            <div class="ym-col1">
+                <div class="ym-cbox">
+                    <select ng-model="FilterLomTitle" ng-options="f.Name for f in FilterLomTitles | orderBy:['PriorizedSort', 'Name']">
+                        <option value="">@App.Resources.LabelLomsAll</option>
+                    </select>
+                </div>
+            </div>
+            <div class="ym-col2">
+                <div class="ym-cbox">
+                    <select ng-model="FilterCategory" ng-options="f.Name for f in FilterCategories | orderBy:'Name'">
+                        <option value="">@App.Resources.LabelCategoriesAll</option>
+                    </select>
+                </div>
+            </div>
+            <div class="ym-col3">
+                <div class="ym-cbox">
+                    <select ng-model="FilterYear" ng-options="f.Name for f in FilterYears | orderBy:'Name':true">
+                        <option value="">@App.Resources.LabelYearsAll</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END FILTER -->
+
+
+    <!-- ARTICLES -->
+    <ul class="jci-pr-articles" ng-cloak>
+        <li class="sc-element" ng-repeat="article in Articles | filter: { Categories: FilterCategory.Value, LomTitle: FilterLomTitle.Value, Year: FilterYear.Value } | orderBy: 'Date': true">
+            <div ng-bind-html="getArticleToolbar(article)"></div>
+
+            <div class="ym-column jci-pr-article" ng-click="showArticlePreview(article)">
+                <!-- ARTICLE CONTENT -->
+                <div class="ym-col1">
+                    <div class="ym-cbox">
+                        <div class="jci-pr-article-title">{{article.Title}}</div>
+                        <div class="jci-pr-article-teaser">{{article.Teaser}}</div>
+                        <ul class="jci-pr-article-links">
+                            <li>
+                                <a ng-click="openLink(article.File, $event)">@App.Resources.LabelDownload</a>
+                            </li>
+                            <li ng-if="article.LiveArticle">
+                                <a ng-click="openLink(article.LiveArticle, $event)">@App.Resources.LabelLiveArticle</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- END ARTICLE CONTENT -->
+                <!-- ARTICLE ASIDE -->
+                <div class="ym-col2">
+                    <div class="ym-cbox">
+                        <ul class="jci-pr-article-asides">
+                            <li><a ng-click="openLink(article.Lom.Website, $event)">{{article.Lom.Title}}</a></li>
+                            <li>{{article.Date | formatDate: 'DD.MM.YYYY'}}</li>
+                            <li ng-if="article.Publisher"><a ng-click="openLink(article.Publisher.Link, $event)">{{article.Publisher.Title}}</a></li>
+                            <li ng-if="article.Categories">{{article.Categories | formatArray: ', '}}</li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- END ARTICLE ASIDE -->
+                <!-- ARTICLE THUMBNAIL -->
+                <div class="ym-col3">
+                    <div class="ym-cbox" ng-if="!article.Thumbnail">
+                        <!-- Show default thumbnail -->
+                        <img src="{{'@App.Path/assets/pictures/thumbnail-default.png' | formatThumbnail: 256}}" alt="" />
+                    </div>
+                    <div class="ym-cbox" ng-if="article.Thumbnail">
+                        <img ng-src="{{article.Thumbnail | formatThumbnail: 256}}" alt="" />
+                    </div>
+                </div>
+                <!-- END ARTICLE THUMBNAIL -->
+            </div>
+        </li>
+    </ul>
+    <!-- END ARTICLES -->
+
+    <!-- LIGHTBOX -->
+    <div id="jci-pr-article-preview-@Dnn.Module.ModuleID" class="jci-pr-article-preview" style="display:none">
+        <div ng-if="!PreviewArticle.Thumbnail">
+            <img ng-src="{{'@App.Path/assets/pictures/thumbnail-default.png' | formatThumbnail: 1024 }}" alt="" />
+        </div>
+        <div ng-if="PreviewArticle.Thumbnail">
+            <img ng-src="{{PreviewArticle.Thumbnail | formatThumbnail: 1024}}" alt="" />
+        </div>
+        <div class="jci-pr-article-title">{{PreviewArticle.Title}}</div>
+        <div class="jci-pr-article-content" ng-bind-html="PreviewArticle.Content"></div>
+    </div>
+    <!-- END LIGHTBOX -->
+
+</div>
+
+<script>
+    // Load the press releases application into the Angular injector (the scope of the 
+    // application is the jci-pr-XXX element)
+    angular.element(document).ready(function () {
+        angular.bootstrap(document.getElementById("jci-pr-@Dnn.Module.ModuleID"), ["PressReleasesApp"]);
+    });
+</script>

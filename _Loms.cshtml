@@ -1,0 +1,87 @@
+@using System.Globalization
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=true"></script>
+<link rel="stylesheet" href="@App.Path/assets/loms.css" data-enableoptimizations="true" />
+
+@* This is the DIV which will show the google map *@
+<div id="LomMapCanvas"></div>
+
+@* This is the HTML-table showing the LOMs, with edit-buttons etc. 
+   It uses @App.Resources to make sure all labels are multi-language capable *@
+<table class="co-lom-list">
+    <thead>
+        <tr>
+            <th><span>@App.Resources.MapLabelLocalChamber</span></th>
+            <th><span>@App.Resources.MapLabelLocation</span></th>
+            <th><span>@App.Resources.MapLabelWebsite</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var set in List)
+        {
+            var lom = set.Content;
+            <tr class="@((List.IndexOf(set) % 2 == 0) ? "even" : "")">
+                <td>@lom.Title @lom.Toolbar</td>
+                <td>@lom.City</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(lom.Website))
+                        { <a class="co-lom-link" href="@lom.Website" target="_blank">@App.Resources.MapLabelDetails</a> }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@* This block generates the location-array for the google map *@
+<script type="text/javascript">
+    $(document).ready(function () {
+        var locations = [ @foreach (var contentSet in List)
+                          {
+                              var lom = contentSet.Content;
+                              <text>{ Title: "@lom.Title", HomeBase: "@lom.HomeBase", Street: "@lom.Street", ZipCode: "@lom.ZipCode", City: "@lom.City", Country: "@lom.Country", Website: "@lom.Website", Latitude: @(lom.GPSLat != null ? lom.GPSLat.ToString(CultureInfo.InvariantCulture) : "null"), Longitude: @(lom.GPSLng != null ? lom.GPSLng.ToString(CultureInfo.InvariantCulture) : "null") },</text>
+                          }];
+
+        var mapOptions = {
+            center: new google.maps.LatLng(46.933687, 8.492431),
+            zoom: 8,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+
+        var map = new google.maps.Map(document.getElementById("LomMapCanvas"), mapOptions);
+        var infowindow = new google.maps.InfoWindow();
+
+        // Add all Locations as Markers
+        $.each(locations, function(i, location) {
+            var marker = new google.maps.Marker({
+                position: new google.maps.LatLng(location.Latitude, location.Longitude),
+                title: $("<div/>").html(location.Title).text(),	// htmldecoded
+                map: map,
+                metadata: { lomIndex: i }
+            });
+
+            google.maps.event.addListener(marker, 'click', function () {
+                var location = locations[this.metadata.lomIndex];
+
+                var content = '<div class="co-lom-list-infowindow"><strong>' + location.Title + "</strong><br/>" + location.Street + "<br/>" + location.ZipCode + " " + location.City;
+                if (location.Website != "")
+                    content += '<br/><a href="' + location.Website + '" target="_blank">Webseite</a>';
+                content += "</div>";
+                infowindow.setContent(content);
+                infowindow.open(map, this);
+            });
+        });
+
+    });
+</script>
+
+
+<script type="text/javascript">
+    // Simple helper to make the entire row showing the data clickable; will open the link in the last column of that row
+    $(document).ready(function () {
+        $(".co-lom-list td").click(function (e) {
+            e.preventDefault();
+            var link = $(this).parent().find(".co-lom-link");
+            if (link.size() > 0)
+                window.open(link.attr("href"), link.attr("target"));
+        });
+    });
+</script>
